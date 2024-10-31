@@ -1,0 +1,10 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,svelte}"
+      run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
+      stage_fixed: true
+    cargo:
+      glob: "src-tauri/*.rs"
+      run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check {staged_files}
