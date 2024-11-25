@@ -1,4 +1,5 @@
 use tauri::{
+    include_image,
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
 };
@@ -19,7 +20,8 @@ pub fn run() {
             let menu = Menu::with_items(app, &[&quit_i])?;
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(include_image!("./icons/SystemTray@2x.png"))
+                .icon_as_template(true)
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "quit" => {
