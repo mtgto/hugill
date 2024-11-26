@@ -1,6 +1,6 @@
 use tauri::{
     include_image,
-    menu::{Menu, MenuItem},
+    menu::{IconMenuItem, Menu, MenuItem, NativeIcon, PredefinedMenuItem},
     tray::TrayIconBuilder,
 };
 
@@ -16,8 +16,19 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .invoke_handler(tauri::generate_handler![greet])
         .setup(|app| {
+            let running_i = IconMenuItem::with_id_and_native_icon(
+                app,
+                "running",
+                "Running",
+                true,
+                Some(NativeIcon::StatusAvailable),
+                None::<&str>,
+            )?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&quit_i])?;
+            let menu = Menu::with_items(
+                app,
+                &[&running_i, &PredefinedMenuItem::separator(app)?, &quit_i],
+            )?;
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
                 .icon(include_image!("./icons/SystemTray@2x.png"))
