@@ -2,7 +2,10 @@ use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuItem, NativeIcon, PredefinedMenuItem},
     tray::TrayIconBuilder,
+    Listener,
 };
+
+mod watcher;
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
@@ -41,6 +44,10 @@ pub fn run() {
                     _ => {}
                 })
                 .build(app);
+            let _ = app.listen("watcher", move |event| {
+                println!("watcher event received");
+            });
+            watcher::start(app.handle().clone())?;
             Ok(())
         })
         .run(tauri::generate_context!())
