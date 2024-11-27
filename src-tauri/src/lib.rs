@@ -47,6 +47,11 @@ pub fn run() {
             let _ = app.listen("watcher", move |event| {
                 println!("watcher event received");
             });
+            let _ = app.listen("watcher-error", move |event| {
+                // failed to create kube client
+                // TODO: restart watcher
+                println!("watcher error event received");
+            });
             watcher::start(app.handle().clone())?;
             Ok(())
         })
