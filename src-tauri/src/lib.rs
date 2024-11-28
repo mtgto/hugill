@@ -41,7 +41,9 @@ pub fn run() {
                     "quit" => {
                         app.exit(0);
                     }
-                    _ => {}
+                    _ => {
+                        println!("other menu event");
+                    }
                 })
                 .build(app);
             let _ = app.listen("watcher", move |event| {
