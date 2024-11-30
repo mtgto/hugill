@@ -1,21 +1,31 @@
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams, ResourceExt},
+    config::{Config, KubeConfigOptions, Kubeconfig},
     Client,
 };
 use tauri::{AppHandle, Emitter, EventTarget};
 use tokio::time;
 
 pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    let (current_context, client) = tauri::async_runtime::block_on(async move {
+        let kubeconfig = Kubeconfig::read()?;
+        let current_context = kubeconfig
+            .current_context
+            .clone()
+            .ok_or("no current context")?;
+        let config =
+            Config::from_custom_kubeconfig(kubeconfig, &KubeConfigOptions::default()).await?;
+        let client = Client::try_from(config)?;
+        return Ok::<(std::string::String, Client), Box<dyn std::error::Error>>((
+            current_context,
+            client,
+        ));
+    })?;
+    println!("default context: {}", current_context);
     tauri::async_runtime::spawn(async move {
-        let client = if let Ok(client) = Client::try_default().await {
-            client
-        } else {
-            let _ = handle
-                .emit_to(EventTarget::app(), "watcher-error", "")
-                .expect("failed to emit watcher event");
-            return;
-        };
+        let namespace = client.default_namespace().to_string();
+        println!("watching pods in namespace {}", namespace);
         let pods: Api<Pod> = Api::default_namespaced(client);
         loop {
             match pods.list(&ListParams::default()).await {
