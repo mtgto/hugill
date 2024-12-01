@@ -10,9 +10,9 @@ use tokio::time;
 
 // Pod status
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct PodStatus {
+pub struct PodStatus {
     /// Pod name
-    name: String,
+    pub name: String,
     container_name: Option<String>,
     status: String,
 }
@@ -22,7 +22,7 @@ struct PodStatus {
 pub struct ClusterStatus {
     context: String,
     namespace: String,
-    pods: Vec<PodStatus>,
+    pub pods: Vec<PodStatus>,
 }
 
 pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
