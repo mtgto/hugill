@@ -19,7 +19,7 @@ struct PodStatus {
 
 // Running pods status
 #[derive(Serialize, Deserialize, Clone, Debug)]
-struct Status {
+pub struct ClusterStatus {
     context: String,
     namespace: String,
     pods: Vec<PodStatus>,
@@ -55,7 +55,7 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                                 .unwrap_or("Unknown".to_string()),
                         });
                     }
-                    let status = Status {
+                    let status = ClusterStatus {
                         context: current_context.clone(),
                         namespace: namespace.clone(),
                         pods,

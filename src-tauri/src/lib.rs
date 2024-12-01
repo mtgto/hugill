@@ -4,6 +4,7 @@ use tauri::{
     tray::TrayIconBuilder,
     Listener,
 };
+use watcher::ClusterStatus;
 
 mod watcher;
 
@@ -47,7 +48,8 @@ pub fn run() {
                 })
                 .build(app);
             let _ = app.listen("watcher", move |event| {
-                println!("watcher event received: {:?}", event.payload());
+                let status: ClusterStatus = serde_json::from_str(event.payload()).unwrap();
+                println!("watcher event received: {:?}", status);
             });
             let _ = app.listen("watcher-error", move |event| {
                 // failed to create kube client
