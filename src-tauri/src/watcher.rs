@@ -4,8 +4,24 @@ use kube::{
     config::{Config, KubeConfigOptions, Kubeconfig},
     Client,
 };
+use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, EventTarget};
 use tokio::time;
+
+// Pod status
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PodStatus {
+    name: String,
+    status: String,
+}
+
+// Running pods status
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Status {
+    context: String,
+    namespace: String,
+    pods: Vec<PodStatus>,
+}
 
 pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     let kubeconfig = Kubeconfig::read()?;
