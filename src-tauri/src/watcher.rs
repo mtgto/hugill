@@ -29,6 +29,14 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 Ok(pods) => {
                     for p in pods {
                         println!("found pod {}", p.name_any());
+                        match p.spec {
+                            Some(spec) => {
+                                println!("container name: {:?}", spec.containers[0].name);
+                            }
+                            None => {
+                                println!("no spec");
+                            }
+                        };
                     }
                 }
                 Err(e) => {
