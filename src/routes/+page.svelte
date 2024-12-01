@@ -1,4 +1,5 @@
 <script lang="ts">
+import RemotePathDialog from "$lib/RemotePathDialog.svelte";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
@@ -14,17 +15,11 @@ type ClusterStatus = {
     pods: PodStatus[];
 };
 
-let name = $state("");
-let greetMsg = $state("");
 let context = $state("");
 let namespace = $state("");
 let pods = $state<PodStatus[]>([]);
-
-async function greet(event: Event) {
-    event.preventDefault();
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    greetMsg = await invoke("greet", { name });
-}
+let selectedPod = $state<PodStatus | null>(null);
+let remotePath = $state("");
 
 listen<ClusterStatus>("cluster-status", (event) => {
     const clusterStatus = event.payload;
@@ -60,13 +55,14 @@ listen<ClusterStatus>("cluster-status", (event) => {
                 <tr>
                     <td>{pod.container_name ?? "-"}</td>
                     <td>{pod.name}</td>
-                    <td>{pod.status}</td>
-                    <td><button class="button is-small is-info">Open</button></td>
+                    <td class="success">{pod.status}</td>
+                    <td><button class="button is-small is-info" onclick={() => { remotePath = "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
             {/each}
         </tbody>
     </table>
-</main>
+    <RemotePathDialog isActive={selectedPod !== null} onClickDone={() => { selectedPod = null; }} />
+</main>}
 
 <style>
     .success {
