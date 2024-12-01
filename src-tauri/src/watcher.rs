@@ -9,15 +9,17 @@ use tauri::{AppHandle, Emitter, EventTarget};
 use tokio::time;
 
 // Pod status
-#[derive(Serialize, Deserialize, Debug)]
-pub struct PodStatus {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct PodStatus {
+    /// Pod name
     name: String,
+    container_name: Option<String>,
     status: String,
 }
 
 // Running pods status
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Status {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct Status {
     context: String,
     namespace: String,
     pods: Vec<PodStatus>,
@@ -38,31 +40,35 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
     println!("default context: {}", current_context);
     tauri::async_runtime::spawn(async move {
         let namespace = client.default_namespace().to_string();
-        println!("watching pods in namespace {}", namespace);
-        let pods: Api<Pod> = Api::default_namespaced(client);
+        let api: Api<Pod> = Api::default_namespaced(client);
         loop {
-            match pods.list(&ListParams::default()).await {
-                Ok(pods) => {
-                    for p in pods {
-                        println!("found pod {}", p.name_any());
-                        match p.spec {
-                            Some(spec) => {
-                                println!("container name: {:?}", spec.containers[0].name);
-                            }
-                            None => {
-                                println!("no spec");
-                            }
-                        };
+            match api.list(&ListParams::default()).await {
+                Ok(pod_list) => {
+                    let mut pods: Vec<PodStatus> = Vec::new();
+                    for pod in pod_list {
+                        pods.push(PodStatus {
+                            name: pod.name_any(),
+                            container_name: pod.spec.map(|s| s.containers[0].name.clone()),
+                            status: pod
+                                .status
+                                .and_then(|s| s.phase)
+                                .unwrap_or("Unknown".to_string()),
+                        });
                     }
+                    let status = Status {
+                        context: current_context.clone(),
+                        namespace: namespace.clone(),
+                        pods,
+                    };
+                    let _ = handle
+                        .emit_to(EventTarget::app(), "watcher", status)
+                        .expect("failed to emit watcher event");
                 }
                 Err(e) => {
                     println!("failed to list pods: {}", e);
                 }
             }
             tokio::time::sleep(time::Duration::from_secs(5)).await;
-            let _ = handle
-                .emit_to(EventTarget::app(), "watcher", 0)
-                .expect("failed to emit watcher event");
         }
     });
     Ok(())
