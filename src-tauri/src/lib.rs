@@ -2,7 +2,7 @@ use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
     tray::TrayIconBuilder,
-    AppHandle, Error, Listener, Wry,
+    AppHandle, Emitter, Error, Listener, Wry,
 };
 use watcher::{ClusterStatus, PodStatus};
 
@@ -45,6 +45,9 @@ pub fn run() {
                     }
                     None => (),
                 }
+                handle
+                    .emit_to("hugill", "cluster-status", status.clone())
+                    .expect("failed to emit updated status");
                 println!("watcher event received: {:?}", status);
             });
             let _ = app.listen("watcher-error", move |event| {

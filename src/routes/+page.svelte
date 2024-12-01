@@ -1,5 +1,18 @@
 <script lang="ts">
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
+
+type PodStatus = {
+    name: string;
+    container_name: string;
+    status: string;
+};
+
+type ClusterStatus = {
+    context: string;
+    namespace: string;
+    pods: PodStatus[];
+};
 
 let name = $state("");
 let greetMsg = $state("");
@@ -9,6 +22,11 @@ async function greet(event: Event) {
     // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
     greetMsg = await invoke("greet", { name });
 }
+
+listen<ClusterStatus>("cluster-status", (event) => {
+    const clusterStatus = event.payload;
+    console.log("Received cluster status:", clusterStatus);
+});
 </script>
 
 <main class="container">
