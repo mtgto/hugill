@@ -7,6 +7,7 @@ type PodStatus = {
     name: string;
     container_name?: string;
     status: string;
+    workspace_folder?: string;
 };
 
 type ClusterStatus = {
@@ -15,8 +16,8 @@ type ClusterStatus = {
     pods: PodStatus[];
 };
 
-let context = $state("");
-let namespace = $state("");
+let context = $state("-");
+let namespace = $state("-");
 let pods = $state<PodStatus[]>([]);
 let selectedPod = $state<PodStatus | null>(null);
 let remotePath = $state("");
@@ -47,6 +48,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
                 <th>Container</th>
                 <th>Name</th>
                 <th>Status</th>
+                <th>Workspace Folder</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -56,13 +58,14 @@ listen<ClusterStatus>("cluster-status", (event) => {
                     <td>{pod.container_name ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td class="success">{pod.status}</td>
+                    <td>/path/to/workspace</td>
                     <td><button class="button is-small is-info" onclick={() => { remotePath = "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
             {/each}
         </tbody>
     </table>
     <RemotePathDialog isActive={selectedPod !== null} onClickDone={() => { selectedPod = null; }} />
-</main>}
+</main>
 
 <style>
     .success {
