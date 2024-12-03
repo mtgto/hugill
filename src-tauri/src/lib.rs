@@ -24,6 +24,20 @@ fn open_remote_container(
     println!("encoded: {encoded}");
     let remote_uri = format!("vscode-remote://{encoded}{workspace_folder}");
     println!("remote_uri: {remote_uri}");
+    let shell = app_handle.shell();
+    let output = tauri::async_runtime::block_on(async move {
+        return shell
+            .command("code")
+            .args(["--folder-uri", &remote_uri])
+            .output()
+            .await
+            .unwrap();
+    });
+    if output.status.success() {
+        println!("Result: {:?}", String::from_utf8(output.stdout));
+    } else {
+        println!("Exit with code: {}", output.status.code().unwrap());
+    }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
