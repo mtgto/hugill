@@ -18,7 +18,7 @@ fn open_remote_container(
     pod_name: &str,
     container_name: &str,
     workspace_folder: &str,
-) {
+) -> Result<(), String> {
     let s = format!("k8s-container+context={context}+podname={pod_name}+namespace={namespace}+name={container_name}");
     let encoded = utf8_percent_encode(&s, NON_ALPHANUMERIC).to_string();
     println!("encoded: {encoded}");
@@ -34,9 +34,10 @@ fn open_remote_container(
             .unwrap();
     });
     if output.status.success() {
-        println!("Result: {:?}", String::from_utf8(output.stdout));
+        return Ok(());
     } else {
         println!("Exit with code: {}", output.status.code().unwrap());
+        return Err("Failed to open remote container".to_string());
     }
 }
 

@@ -22,6 +22,24 @@ let pods = $state<PodStatus[]>([]);
 let selectedPod = $state<PodStatus | null>(null);
 let remotePath = $state("");
 
+const handleClickOpen = async (workspaceFolder: string) => {
+    if (selectedPod) {
+        try {
+            await invoke("open_remote_container", {
+                context: context,
+                namespace: namespace,
+                podName: selectedPod.name,
+                containerName: selectedPod.container_name ?? "",
+                workspaceFolder: workspaceFolder,
+            });
+        } catch (error) {
+            // TODO: Show an error message to the user
+            console.error("Failed to open remote container:", error);
+        }
+        selectedPod = null;
+    }
+};
+
 listen<ClusterStatus>("cluster-status", (event) => {
     const clusterStatus = event.payload;
     console.log("Received cluster status:", clusterStatus);
@@ -65,7 +83,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
             {/each}
         </tbody>
     </table>
-    <RemotePathDialog isActive={selectedPod !== null} onClickDone={() => { selectedPod = null; }} />
+    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} />
 </main>
 
 <style>
