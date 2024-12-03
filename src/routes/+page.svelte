@@ -2,6 +2,7 @@
 import RemotePathDialog from "$lib/RemotePathDialog.svelte";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { fade } from "svelte/transition";
 
 type PodStatus = {
     name: string;
@@ -21,6 +22,8 @@ let namespace = $state("-");
 let pods = $state<PodStatus[]>([]);
 let selectedPod = $state<PodStatus | null>(null);
 let remotePath = $state("");
+let successNotification = $state<string | null>(null);
+let dangerNotification = $state<string | null>(null);
 
 const handleClickOpen = async (workspaceFolder: string) => {
     if (selectedPod) {
@@ -32,9 +35,14 @@ const handleClickOpen = async (workspaceFolder: string) => {
                 containerName: selectedPod.container_name ?? "",
                 workspaceFolder: workspaceFolder,
             });
+            dangerNotification = null;
+            successNotification = "Success!";
+            setTimeout(() => {
+                successNotification = null;
+            }, 2000);
         } catch (error) {
-            // TODO: Show an error message to the user
-            console.error("Failed to open remote container:", error);
+            successNotification = null;
+            dangerNotification = "Failed to open remote container.";
         }
         selectedPod = null;
     }
@@ -60,7 +68,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
             <p class="subtitle is-6">{namespace}</p>
         </div>
     </header>
-    <button class="button" onclick={() => invoke("open_remote_container", { context: "k3d-default", namespace: "default", podName: "nginx-deploy-576c6b7b6-rv5w8", containerName: "nginx", workspaceFolder: "/" })}>Open</button>
+    <button class="button" onclick={() => { dangerNotification = "Error!"; }}>Show Notification</button>
     <table class="table is-fullwidth">
         <thead>
             <tr>
@@ -84,10 +92,30 @@ listen<ClusterStatus>("cluster-status", (event) => {
         </tbody>
     </table>
     <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} />
+    {#if successNotification}
+        <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>
+            {successNotification}
+        </div>
+    {/if}
+    {#if dangerNotification}
+        <div class="notification is-danger py-3 pl-3 pr-6 m-4">
+            <button class="delete" aria-label="close" onclick={() => { dangerNotification = null; }}></button>
+            {dangerNotification}
+        </div>
+    {/if}
 </main>
 
 <style>
     .success {
         color: var(--bulma-success);
+    }
+    .notification {
+        position: fixed;
+        right: 0;
+        top: 0;
+    }
+    .notification > .delete {
+        top: 0.5rem;
+        right: 0.5rem;
     }
 </style>
