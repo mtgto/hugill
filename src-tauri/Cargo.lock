@@ -1487,6 +1487,7 @@ version = "0.1.0"
 dependencies = [
  "k8s-openapi",
  "kube",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tauri",

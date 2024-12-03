@@ -12,7 +12,7 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       '@tauri-apps/plugin-shell':
-        specifier: ^2
+        specifier: ^2.0.1
         version: 2.0.1
       bulma:
         specifier: ^1.0.2

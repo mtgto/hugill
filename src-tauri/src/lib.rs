@@ -1,24 +1,36 @@
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
     tray::TrayIconBuilder,
     AppHandle, Emitter, Error, Listener, Wry,
 };
+use tauri_plugin_shell::ShellExt;
 use watcher::{ClusterStatus, PodStatus};
 
 mod watcher;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
+fn open_remote_container(
+    app_handle: tauri::AppHandle,
+    context: &str,
+    namespace: &str,
+    pod_name: &str,
+    container_name: &str,
+    workspace_folder: &str,
+) {
+    let s = format!("k8s-container+context={context}+podname={pod_name}+namespace={namespace}+name={container_name}");
+    let encoded = utf8_percent_encode(&s, NON_ALPHANUMERIC).to_string();
+    println!("encoded: {encoded}");
+    let remote_uri = format!("vscode-remote://{encoded}{workspace_folder}");
+    println!("remote_uri: {remote_uri}");
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![greet])
+        .invoke_handler(tauri::generate_handler![open_remote_container])
         .setup(|app| {
             let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")

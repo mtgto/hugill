@@ -42,6 +42,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
             <p class="subtitle is-6">{namespace}</p>
         </div>
     </header>
+    <button class="button" onclick={() => invoke("open_remote_container", { context: "k3d-default", namespace: "default", podName: "nginx-deploy-576c6b7b6-rv5w8", containerName: "nginx", workspaceFolder: "/" })}>Open</button>
     <table class="table is-fullwidth">
         <thead>
             <tr>
