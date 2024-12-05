@@ -6,9 +6,9 @@ import { fade } from "svelte/transition";
 
 type PodStatus = {
     name: string;
-    container_name?: string;
+    containerName?: string;
     status: string;
-    workspace_folder?: string;
+    workspaceFolder?: string;
 };
 
 type ClusterStatus = {
@@ -32,7 +32,7 @@ const handleClickOpen = async (workspaceFolder: string) => {
                 context: context,
                 namespace: namespace,
                 podName: selectedPod.name,
-                containerName: selectedPod.container_name ?? "",
+                containerName: selectedPod.containerName ?? "",
                 workspaceFolder: workspaceFolder,
             });
             dangerNotification = null;
@@ -82,11 +82,11 @@ listen<ClusterStatus>("cluster-status", (event) => {
         <tbody>
             {#each pods as pod}
                 <tr>
-                    <td>{pod.container_name ?? "-"}</td>
+                    <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td class="success">{pod.status}</td>
                     <td>/path/to/workspace</td>
-                    <td><button class="button is-small is-info" onclick={() => { remotePath = "/"; selectedPod = pod; }}>Open</button></td>
+                    <td><button class="button is-small is-info" onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
             {/each}
         </tbody>

@@ -10,6 +10,7 @@ use tokio::time;
 
 // Pod status
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct PodStatus {
     /// Pod name
     pub name: String,
