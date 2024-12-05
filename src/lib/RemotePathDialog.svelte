@@ -1,11 +1,11 @@
 <script lang="ts">
 type Props = {
+    remotePath: string;
     isActive: boolean;
     onClose: () => void;
     onOpen: (workspaceFolder: string) => void;
 };
-let { isActive, onClose, onOpen }: Props = $props();
-let remotePath = $state("");
+let { isActive, onClose, onOpen, remotePath = $bindable() }: Props = $props();
 
 const handleKeydown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {

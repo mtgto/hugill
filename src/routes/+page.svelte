@@ -25,6 +25,16 @@ let remotePath = $state("");
 let successNotification = $state<string | null>(null);
 let dangerNotification = $state<string | null>(null);
 
+const isSamePod = (pod1: PodStatus | null, pod2: PodStatus): boolean => {
+    if (pod1) {
+        return (
+            pod1.name === pod2.name && pod1.containerName === pod2.containerName
+        );
+    } else {
+        return false;
+    }
+};
+
 const handleClickOpen = async (workspaceFolder: string) => {
     if (selectedPod) {
         try {
@@ -37,6 +47,12 @@ const handleClickOpen = async (workspaceFolder: string) => {
             });
             dangerNotification = null;
             successNotification = "Success!";
+            pods = pods.map((pod) => {
+                if (isSamePod(selectedPod, pod)) {
+                    return { ...pod, workspaceFolder: workspaceFolder };
+                }
+                return pod;
+            });
             setTimeout(() => {
                 successNotification = null;
             }, 2000);
@@ -85,13 +101,13 @@ listen<ClusterStatus>("cluster-status", (event) => {
                     <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td class="success">{pod.status}</td>
-                    <td>/path/to/workspace</td>
+                    <td>{pod.workspaceFolder ?? "-"}</td>
                     <td><button class="button is-small is-info" onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
             {/each}
         </tbody>
     </table>
-    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} />
+    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} remotePath={remotePath} />
     {#if successNotification}
         <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>
             {successNotification}
