@@ -1,7 +1,8 @@
-use std::{collections::HashMap, time::Duration};
+use std::collections::HashMap;
 
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
@@ -21,11 +22,6 @@ struct WorkspaceSetting {
     container_name: String,
     workspace_folder: String,
     labels: HashMap<String, String>,
-}
-
-#[derive(Default)]
-struct AppState {
-    workspace_settings: Vec<WorkspaceSetting>,
 }
 
 #[tauri::command]
@@ -67,11 +63,11 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![open_remote_container])
         .setup(|app| {
             let handle = app.handle().clone();
-            let store = app
+            let default_workspace_settings: [WorkspaceSetting; 0] = [];
+            let _ = app
                 .store_builder("settings.json")
-                .auto_save(Duration::from_secs(60))
+                .default("workspaces", json!(default_workspace_settings))
                 .build()?;
-            store.set("some-key", "value");
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
                 .icon(include_image!("./icons/SystemTray@2x.png"))
@@ -88,6 +84,8 @@ pub fn run() {
                 .build(app);
             let _ = app.listen("watcher", move |event| {
                 let status: ClusterStatus = serde_json::from_str(event.payload()).unwrap();
+                let store = handle.store("settings.json").unwrap();
+                store.set("workspaces", json!(status.pods));
                 // TODO: resolve favorite pods
                 match handle.tray_by_id("hugill-tray") {
                     Some(tray) => {
