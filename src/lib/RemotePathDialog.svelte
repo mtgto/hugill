@@ -21,7 +21,9 @@ const handleKeydown = (event: KeyboardEvent) => {
             <p class="modal-card-title">Enter the full path of the workspace folder</p>
         </header>
         <section class="modal-card-body">
-            <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} />
+            <form onsubmit={(e) => { e.preventDefault(); onOpen(remotePath) }}>
+                <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} />
+            </form>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-flex-end py-4">
             <div class="buttons">
