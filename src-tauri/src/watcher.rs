@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
     api::{Api, ListParams, ResourceExt},
@@ -16,6 +18,7 @@ pub struct PodStatus {
     pub name: String,
     container_name: Option<String>,
     status: String,
+    labels: BTreeMap<String, String>,
 }
 
 // Running pods status
@@ -54,6 +57,7 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                                 .status
                                 .and_then(|s| s.phase)
                                 .unwrap_or("Unknown".to_string()),
+                            labels: pod.metadata.labels.unwrap_or_default(),
                         });
                     }
                     let status = ClusterStatus {
