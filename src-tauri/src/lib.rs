@@ -1,4 +1,7 @@
+use std::{collections::HashMap, time::Duration};
+
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use serde::{Deserialize, Serialize};
 use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
@@ -6,9 +9,24 @@ use tauri::{
     AppHandle, Emitter, Error, Listener, Wry,
 };
 use tauri_plugin_shell::ShellExt;
+use tauri_plugin_store::StoreExt;
 use watcher::{ClusterStatus, PodStatus};
 
 mod watcher;
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+struct WorkspaceSetting {
+    context: String,
+    namespace: String,
+    container_name: String,
+    workspace_folder: String,
+    labels: HashMap<String, String>,
+}
+
+#[derive(Default)]
+struct AppState {
+    workspace_settings: Vec<WorkspaceSetting>,
+}
 
 #[tauri::command]
 fn open_remote_container(
@@ -45,9 +63,15 @@ fn open_remote_container(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![open_remote_container])
         .setup(|app| {
             let handle = app.handle().clone();
+            let store = app
+                .store_builder("settings.json")
+                .auto_save(Duration::from_secs(60))
+                .build()?;
+            store.set("some-key", "value");
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
                 .icon(include_image!("./icons/SystemTray@2x.png"))
