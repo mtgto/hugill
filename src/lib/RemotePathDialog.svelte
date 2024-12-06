@@ -3,7 +3,7 @@ type Props = {
     remotePath: string;
     isActive: boolean;
     onClose: () => void;
-    onOpen: (workspaceFolder: string) => void;
+    onOpen: () => void;
 };
 let { isActive, onClose, onOpen, remotePath = $bindable() }: Props = $props();
 
@@ -21,14 +21,14 @@ const handleKeydown = (event: KeyboardEvent) => {
             <p class="modal-card-title">Enter the full path of the workspace folder</p>
         </header>
         <section class="modal-card-body">
-            <form onsubmit={(e) => { e.preventDefault(); onOpen(remotePath) }}>
+            <form onsubmit={(e) => { e.preventDefault(); onOpen() }}>
                 <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} />
             </form>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-flex-end py-4">
             <div class="buttons">
                 <button class="button" aria-label="close" onclick={() => onClose()}>Cancel</button>
-                <button class="button is-success" disabled={!remotePath.startsWith("/")} aria-label="close" onclick={() => onOpen(remotePath)}>Open</button>
+                <button class="button is-success" disabled={!remotePath.startsWith("/")} aria-label="close" onclick={() => onOpen()}>Open</button>
             </div>
         </footer>
     </div>

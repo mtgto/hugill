@@ -35,21 +35,21 @@ const isSamePod = (pod1: PodStatus | null, pod2: PodStatus): boolean => {
     }
 };
 
-const handleClickOpen = async (workspaceFolder: string) => {
-    if (selectedPod) {
+const handleClickOpen = async () => {
+    if (selectedPod && remotePath.startsWith("/")) {
         try {
             await invoke("open_remote_container", {
                 context: context,
                 namespace: namespace,
                 podName: selectedPod.name,
                 containerName: selectedPod.containerName ?? "",
-                workspaceFolder: workspaceFolder,
+                workspaceFolder: remotePath,
             });
             dangerNotification = null;
             successNotification = "Success!";
             pods = pods.map((pod) => {
                 if (isSamePod(selectedPod, pod)) {
-                    return { ...pod, workspaceFolder: workspaceFolder };
+                    return { ...pod, workspaceFolder: remotePath };
                 }
                 return pod;
             });
