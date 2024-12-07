@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Mutex;
 
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use serde::{Deserialize, Serialize};
@@ -7,7 +8,7 @@ use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
     tray::TrayIconBuilder,
-    AppHandle, Emitter, Error, Listener, Wry,
+    AppHandle, Emitter, Error, Listener, Manager, Wry,
 };
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
@@ -22,6 +23,10 @@ struct WorkspaceSetting {
     container_name: String,
     workspace_folder: String,
     labels: HashMap<String, String>,
+}
+
+struct AppState {
+    workspace_settings: Vec<WorkspaceSetting>,
 }
 
 #[tauri::command]
@@ -62,12 +67,30 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![open_remote_container])
         .setup(|app| {
-            let handle = app.handle().clone();
             let default_workspace_settings: [WorkspaceSetting; 0] = [];
-            let _ = app
+            app.manage(Mutex::new(AppState {
+                workspace_settings: Vec::new(),
+            }));
+            let store = app
                 .store_builder("settings.json")
                 .default("workspaces", json!(default_workspace_settings))
                 .build()?;
+            let workspace_settings = store
+                .get("workspaces")
+                .unwrap_or(json!(default_workspace_settings));
+            match serde_json::from_value::<Vec<WorkspaceSetting>>(workspace_settings) {
+                Ok(settings) => {
+                    //let mut state = app.state::<Mutex<AppState>>().lock().unwrap();
+                    //state.workspace_settings = settings;
+                    println!("loaded workspace settings: {:?}", settings);
+                }
+                Err(e) => {
+                    println!("failed to load workspace settings: {:?}", e);
+                }
+            }
+            //println!("workspaces: {:?}", workspace_settings);
+            //let workspace_settings: Vec<WorkspaceSetting> = serde_json::from_value(json_value)?;
+            let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
                 .icon(include_image!("./icons/SystemTray@2x.png"))
@@ -84,8 +107,6 @@ pub fn run() {
                 .build(app);
             let _ = app.listen("watcher", move |event| {
                 let status: ClusterStatus = serde_json::from_str(event.payload()).unwrap();
-                let store = handle.store("settings.json").unwrap();
-                store.set("workspaces", json!(status.pods));
                 // TODO: resolve favorite pods
                 match handle.tray_by_id("hugill-tray") {
                     Some(tray) => {
