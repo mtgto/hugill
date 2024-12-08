@@ -8,6 +8,7 @@ type PodStatus = {
     name: string;
     containerName?: string;
     status: string;
+    labels: Record<string, string>;
     workspaceFolder?: string;
 };
 

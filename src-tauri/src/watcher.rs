@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::sync::Mutex;
 
 use k8s_openapi::api::core::v1::Pod;
 use kube::{
@@ -7,8 +8,10 @@ use kube::{
     Client,
 };
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Emitter, EventTarget};
+use tauri::{AppHandle, Emitter, EventTarget, Manager};
 use tokio::time;
+
+use crate::AppState;
 
 // Pod status
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -19,6 +22,7 @@ pub struct PodStatus {
     container_name: Option<String>,
     status: String,
     labels: BTreeMap<String, String>,
+    workspace_folder: Option<String>,
 }
 
 // Running pods status
@@ -50,14 +54,24 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                 Ok(pod_list) => {
                     let mut pods: Vec<PodStatus> = Vec::new();
                     for pod in pod_list {
+                        let name = pod.name_any();
+                        let container_name = pod.spec.map(|s| s.containers[0].name.clone());
+                        let labels = pod.metadata.labels.unwrap_or_default();
+                        let workspace_folder = resolve_workspace_folder(
+                            &handle,
+                            &current_context,
+                            &namespace,
+                            container_name.clone(),
+                        );
                         pods.push(PodStatus {
-                            name: pod.name_any(),
-                            container_name: pod.spec.map(|s| s.containers[0].name.clone()),
+                            name,
+                            container_name: container_name,
                             status: pod
                                 .status
                                 .and_then(|s| s.phase)
                                 .unwrap_or("Unknown".to_string()),
-                            labels: pod.metadata.labels.unwrap_or_default(),
+                            labels: labels.clone(),
+                            workspace_folder,
                         });
                     }
                     let status = ClusterStatus {
@@ -77,4 +91,24 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         }
     });
     Ok(())
+}
+
+fn resolve_workspace_folder(
+    handle: &AppHandle,
+    context: &str,
+    namespace: &str,
+    container_name: Option<String>,
+) -> Option<String> {
+    let state = handle.state::<Mutex<AppState>>();
+    let state = state.lock().unwrap();
+    // TODO: compare labels of pod
+    return state.workspace_settings.iter().find_map(|ws| {
+        if ws.context == context
+            && ws.namespace == namespace
+            && Some(ws.container_name.clone()) == container_name
+        {
+            return Some(ws.workspace_folder.clone());
+        }
+        return None;
+    });
 }

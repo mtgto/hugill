@@ -25,7 +25,7 @@ struct WorkspaceSetting {
     labels: HashMap<String, String>,
 }
 
-struct AppState {
+pub struct AppState {
     workspace_settings: Vec<WorkspaceSetting>,
 }
 
