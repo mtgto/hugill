@@ -1,4 +1,6 @@
 use std::sync::Arc;
+
+use serde_json::json;
 use tauri::Wry;
 use tauri_plugin_store::Store;
 
@@ -23,5 +25,9 @@ impl SettingsStore {
         return AppSettings {
             workspaces: workspaces.unwrap_or_default(),
         };
+    }
+
+    pub fn update_workspaces(&self, workspaces: Vec<WorkspaceSetting>) {
+        self.store.set("workspaces", json!(workspaces));
     }
 }

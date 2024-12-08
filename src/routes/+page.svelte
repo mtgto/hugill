@@ -44,6 +44,7 @@ const handleClickOpen = async () => {
                 namespace: namespace,
                 podName: selectedPod.name,
                 containerName: selectedPod.containerName ?? "",
+                labels: selectedPod.labels,
                 workspaceFolder: remotePath,
             });
             dangerNotification = null;
@@ -108,7 +109,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
             {/each}
         </tbody>
     </table>
-    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} remotePath={remotePath} />
+    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} bind:remotePath={remotePath} />
     {#if successNotification}
         <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>
             {successNotification}

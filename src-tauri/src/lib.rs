@@ -38,6 +38,7 @@ fn open_remote_container(
     namespace: &str,
     pod_name: &str,
     container_name: &str,
+    labels: HashMap<String, String>,
     workspace_folder: &str,
 ) -> Result<(), String> {
     let s = format!("k8s-container+context={context}+podname={pod_name}+namespace={namespace}+name={container_name}");
@@ -55,6 +56,46 @@ fn open_remote_container(
             .unwrap();
     });
     if output.status.success() {
+        let settings_store = app_handle.state::<Mutex<SettingsStore>>();
+        let settings_store = settings_store.lock().unwrap();
+        let mut workspaces = settings_store.app_settings().workspaces;
+        let index = workspaces.iter().position(|ws| {
+            if ws.context == context
+                && ws.namespace == namespace
+                && ws.container_name == container_name
+            {
+                let satisfied = ws
+                    .labels
+                    .iter()
+                    .all(|(k, v)| labels.get(k).map(|val| val == v).unwrap_or(false));
+                if satisfied {
+                    return true;
+                }
+            }
+            return false;
+        });
+        match index {
+            Some(i) => {
+                workspaces[i] = WorkspaceSetting {
+                    context: context.to_string(),
+                    namespace: namespace.to_string(),
+                    container_name: container_name.to_string(),
+                    workspace_folder: workspace_folder.to_string(),
+                    labels: labels, // TODO: filter labels using hash
+                };
+            }
+            None => {
+                workspaces.push(WorkspaceSetting {
+                    context: context.to_string(),
+                    namespace: namespace.to_string(),
+                    container_name: container_name.to_string(),
+                    workspace_folder: workspace_folder.to_string(),
+                    labels: labels, // TODO: filter labels using hash
+                });
+                println!("Added workspace folder for {container_name}");
+            }
+        }
+        settings_store.update_workspaces(workspaces);
         return Ok(());
     } else {
         println!("Exit with code: {}", output.status.code().unwrap());
