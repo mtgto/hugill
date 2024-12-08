@@ -57,12 +57,14 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                         let name = pod.name_any();
                         let container_name = pod.spec.map(|s| s.containers[0].name.clone());
                         let labels = pod.metadata.labels.unwrap_or_default();
-                        let workspace_folder = resolve_workspace_folder(
-                            &handle,
-                            &current_context,
-                            &namespace,
-                            container_name.clone(),
-                        );
+                        let workspace_folder = container_name.clone().and_then(|container_name| {
+                            resolve_workspace_folder(
+                                &handle,
+                                &current_context,
+                                &namespace,
+                                &container_name,
+                            )
+                        });
                         pods.push(PodStatus {
                             name,
                             container_name: container_name,
@@ -97,15 +99,13 @@ fn resolve_workspace_folder(
     handle: &AppHandle,
     context: &str,
     namespace: &str,
-    container_name: Option<String>,
+    container_name: &str,
 ) -> Option<String> {
     let state = handle.state::<Mutex<AppState>>();
     let state = state.lock().unwrap();
     // TODO: compare labels of pod
     return state.workspace_settings.iter().find_map(|ws| {
-        if ws.context == context
-            && ws.namespace == namespace
-            && Some(ws.container_name.clone()) == container_name
+        if ws.context == context && ws.namespace == namespace && ws.container_name == container_name
         {
             return Some(ws.workspace_folder.clone());
         }
