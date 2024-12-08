@@ -11,7 +11,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, EventTarget, Manager};
 use tokio::time;
 
-use crate::AppState;
+use crate::settings::SettingsStore;
 
 // Pod status
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -103,9 +103,10 @@ fn resolve_workspace_folder(
     container_name: &str,
     labels: &BTreeMap<String, String>,
 ) -> Option<String> {
-    let state = handle.state::<Mutex<AppState>>();
-    let state = state.lock().unwrap();
-    return state.workspace_settings.iter().find_map(|ws| {
+    let settings_store = handle.state::<Mutex<SettingsStore>>();
+    let settings_store = settings_store.lock().unwrap();
+    let settings = settings_store.app_settings();
+    return settings.workspaces.iter().find_map(|ws| {
         if ws.context == context && ws.namespace == namespace && ws.container_name == container_name
         {
             let satisfied = ws
