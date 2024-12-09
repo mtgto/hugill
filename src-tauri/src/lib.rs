@@ -76,13 +76,8 @@ fn open_remote_container(
         });
         match index {
             Some(i) => {
-                workspaces[i] = WorkspaceSetting {
-                    context: context.to_string(),
-                    namespace: namespace.to_string(),
-                    container_name: container_name.to_string(),
-                    workspace_folder: workspace_folder.to_string(),
-                    labels: labels, // TODO: filter labels using hash
-                };
+                let ws = &mut workspaces[i];
+                ws.workspace_folder = workspace_folder.to_string();
             }
             None => {
                 workspaces.push(WorkspaceSetting {
