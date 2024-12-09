@@ -36,6 +36,20 @@ const isSamePod = (pod1: PodStatus | null, pod2: PodStatus): boolean => {
     }
 };
 
+// https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
+const classForStatus = (status: string): string => {
+    switch (status) {
+        case "Running":
+            return "success";
+        case "Pending":
+            return "warning";
+        case "Failed":
+            return "danger";
+        default:
+            return "";
+    }
+};
+
 const handleClickOpen = async () => {
     if (selectedPod && remotePath.startsWith("/")) {
         try {
@@ -90,9 +104,9 @@ listen<ClusterStatus>("cluster-status", (event) => {
     <table class="table is-fullwidth">
         <thead>
             <tr>
+                <th>Status</th>
                 <th>Container</th>
                 <th>Name</th>
-                <th>Status</th>
                 <th>Workspace Folder</th>
                 <th>Action</th>
             </tr>
@@ -100,9 +114,9 @@ listen<ClusterStatus>("cluster-status", (event) => {
         <tbody>
             {#each pods as pod}
                 <tr>
+                    <td><span class={"circle " + classForStatus(pod.status)}></span></td>
                     <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
-                    <td class="success">{pod.status}</td>
                     <td>{pod.workspaceFolder ?? "-"}</td>
                     <td><button class="button is-small is-info" onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
@@ -124,8 +138,21 @@ listen<ClusterStatus>("cluster-status", (event) => {
 </main>
 
 <style>
-    .success {
-        color: var(--bulma-success);
+    .circle {
+        border-radius: 50%;
+        width: 1rem;
+        height: 1rem;
+        display: inline-block;
+
+        &.success {
+            background-color: #28ca42;
+        }
+        &.warning {
+            background-color: #ffbf2f;
+        }
+        &.danger {
+            background-color: #fd4943;
+        }
     }
     .notification {
         position: fixed;
