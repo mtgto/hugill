@@ -80,12 +80,19 @@ fn open_remote_container(
                 ws.workspace_folder = workspace_folder.to_string();
             }
             None => {
+                let mut filtered_labels: HashMap<String, String> = HashMap::new();
+                for (key, value) in labels.iter() {
+                    // ignore hash-related labels (e.g. "pod-template-hash")
+                    if !key.ends_with("-hash") {
+                        filtered_labels.insert(key.to_string(), value.to_string());
+                    }
+                }
                 workspaces.push(WorkspaceSetting {
                     context: context.to_string(),
                     namespace: namespace.to_string(),
                     container_name: container_name.to_string(),
                     workspace_folder: workspace_folder.to_string(),
-                    labels: labels, // TODO: filter labels using hash
+                    labels: filtered_labels,
                 });
                 println!("Added workspace folder for {container_name}");
             }
