@@ -41,12 +41,12 @@ const classForStatus = (status: string): string => {
     switch (status) {
         case "Running":
             return "success";
-        case "Pending":
+        case "Waiting":
             return "warning";
-        case "Failed":
+        case "Terminated":
             return "danger";
         default:
-            return "";
+            return "unknown";
     }
 };
 
@@ -152,6 +152,9 @@ listen<ClusterStatus>("cluster-status", (event) => {
         }
         &.danger {
             background-color: #fd4943;
+        }
+        &.unknown {
+            background-color: #b5b5b5;
         }
     }
     .notification {

@@ -71,8 +71,19 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                             container_name,
                             status: pod
                                 .status
-                                .and_then(|s| s.phase)
-                                .unwrap_or("Unknown".to_string()),
+                                .and_then(|s| s.container_statuses)
+                                .and_then(|cs| cs[0].state.clone())
+                                .map_or("Unknown".to_string(), |s| {
+                                    if s.running.is_some() {
+                                        "Running".to_string()
+                                    } else if s.waiting.is_some() {
+                                        "Waiting".to_string()
+                                    } else if s.terminated.is_some() {
+                                        "Terminated".to_string()
+                                    } else {
+                                        "Unknown".to_string()
+                                    }
+                                }),
                             labels: labels.clone(),
                             workspace_folder,
                         });
