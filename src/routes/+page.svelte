@@ -118,7 +118,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
                     <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td>{pod.workspaceFolder ?? "-"}</td>
-                    <td><button class="button is-small is-info" onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
+                    <td><button class="button is-small is-info" disabled={pod.status !== "Running"} onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
                 </tr>
             {/each}
         </tbody>
