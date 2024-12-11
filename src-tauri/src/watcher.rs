@@ -22,7 +22,7 @@ pub struct PodStatus {
     container_name: Option<String>,
     status: String,
     labels: BTreeMap<String, String>,
-    workspace_folder: Option<String>,
+    pub workspace_folder: Option<String>,
 }
 
 // Running pods status

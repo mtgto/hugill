@@ -136,11 +136,16 @@ pub fn run() {
                 .build(app);
             let _ = app.listen("watcher", move |event| {
                 let status: ClusterStatus = serde_json::from_str(event.payload()).unwrap();
-                // TODO: resolve favorite pods
+                // Filter pods which has no workspace_folder setting
+                let pods: Vec<PodStatus> = status
+                    .clone()
+                    .pods
+                    .into_iter()
+                    .filter(|pod| pod.workspace_folder.is_some())
+                    .collect();
                 match handle.tray_by_id("hugill-tray") {
                     Some(tray) => {
-                        let _ =
-                            tray.set_menu(get_tray_menu(&handle, Some(status.clone().pods)).ok());
+                        let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
                     }
                     None => (),
                 }
