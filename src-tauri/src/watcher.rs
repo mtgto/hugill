@@ -19,17 +19,17 @@ use crate::settings::SettingsStore;
 pub struct PodStatus {
     /// Pod name
     pub name: String,
-    container_name: Option<String>,
+    pub container_name: Option<String>,
     status: String,
-    labels: BTreeMap<String, String>,
+    pub labels: BTreeMap<String, String>,
     pub workspace_folder: Option<String>,
 }
 
 // Running pods status
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ClusterStatus {
-    context: String,
-    namespace: String,
+    pub context: String,
+    pub namespace: String,
     pub pods: Vec<PodStatus>,
 }
 

@@ -129,11 +129,37 @@ pub fn run() {
                     "quit" => {
                         app.exit(0);
                     }
-                    _ => {
+                    pod_id => {
+                        let cluster = handle.state::<ClusterStatus>();
+                        cluster
+                            .pods
+                            .iter()
+                            .find(|pod| pod.name == pod_id)
+                            .and_then(|pod| {
+                                return pod.workspace_folder.clone().and_then(|workspace_folder| {
+                                    return pod.container_name.clone().and_then(|container_name| {
+                                        let mut labels = HashMap::new();
+                                        for (key, value) in pod.labels.iter() {
+                                            labels.insert(key.clone(), value.clone());
+                                        }
+                                        return open_remote_container(
+                                            handle.clone(),
+                                            &cluster.context,
+                                            &cluster.namespace,
+                                            &pod.name,
+                                            &container_name,
+                                            labels,
+                                            &workspace_folder,
+                                        )
+                                        .ok();
+                                    });
+                                });
+                            });
                         println!("other menu event");
                     }
                 })
                 .build(app);
+            let handle = app.handle().clone();
             let _ = app.listen("watcher", move |event| {
                 let status: ClusterStatus = serde_json::from_str(event.payload()).unwrap();
                 // Filter pods which has no workspace_folder setting
@@ -143,6 +169,7 @@ pub fn run() {
                     .into_iter()
                     .filter(|pod| pod.workspace_folder.is_some())
                     .collect();
+                handle.manage(status.clone());
                 match handle.tray_by_id("hugill-tray") {
                     Some(tray) => {
                         let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
