@@ -43,7 +43,7 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
         let config = Config::from_custom_kubeconfig(kubeconfig, &KubeConfigOptions::default())
             .await
             .map_err(|_| "failed to load kubeconfig")?;
-        return Client::try_from(config).map_err(|_| "failed to load config for k8s");
+        Client::try_from(config).map_err(|_| "failed to load config for k8s")
     })?;
     println!("default context: {}", current_context);
     tauri::async_runtime::spawn(async move {
@@ -93,7 +93,7 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                         namespace: namespace.clone(),
                         pods,
                     };
-                    let _ = handle
+                    handle
                         .emit_to(EventTarget::app(), "watcher", status)
                         .expect("failed to emit watcher event");
                 }
@@ -117,7 +117,7 @@ fn resolve_workspace_folder(
     let settings_store = handle.state::<Mutex<SettingsStore>>();
     let settings_store = settings_store.lock().unwrap();
     let settings = settings_store.app_settings();
-    return settings.workspaces.iter().find_map(|ws| {
+    settings.workspaces.iter().find_map(|ws| {
         if ws.context == context && ws.namespace == namespace && ws.container_name == container_name
         {
             let satisfied = ws
@@ -128,6 +128,6 @@ fn resolve_workspace_folder(
                 return Some(ws.workspace_folder.clone());
             }
         }
-        return None;
-    });
+        None
+    })
 }

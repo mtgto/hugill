@@ -22,9 +22,9 @@ impl SettingsStore {
         let workspaces = workspaces.and_then(|workspace_settings| {
             serde_json::from_value::<Vec<WorkspaceSetting>>(workspace_settings).ok()
         });
-        return AppSettings {
+        AppSettings {
             workspaces: workspaces.unwrap_or_default(),
-        };
+        }
     }
 
     pub fn update_workspaces(&self, workspaces: Vec<WorkspaceSetting>) {

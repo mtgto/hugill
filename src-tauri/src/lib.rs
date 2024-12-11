@@ -48,12 +48,12 @@ fn open_remote_container(
     println!("remote_uri: {remote_uri}");
     let shell = app_handle.shell();
     let output = tauri::async_runtime::block_on(async move {
-        return shell
+        shell
             .command("code")
             .args(["--folder-uri", &remote_uri])
             .output()
             .await
-            .unwrap();
+            .unwrap()
     });
     if output.status.success() {
         let settings_store = app_handle.state::<Mutex<SettingsStore>>();
@@ -72,7 +72,7 @@ fn open_remote_container(
                     return true;
                 }
             }
-            return false;
+            false
         });
         match index {
             Some(i) => {
@@ -98,10 +98,10 @@ fn open_remote_container(
             }
         }
         settings_store.update_workspaces(workspaces);
-        return Ok(());
+        Ok(())
     } else {
         println!("Exit with code: {}", output.status.code().unwrap());
-        return Err("Failed to open remote container".to_string());
+        Err("Failed to open remote container".to_string())
     }
 }
 
@@ -136,13 +136,13 @@ pub fn run() {
                             .iter()
                             .find(|pod| pod.name == pod_id)
                             .and_then(|pod| {
-                                return pod.workspace_folder.clone().and_then(|workspace_folder| {
-                                    return pod.container_name.clone().and_then(|container_name| {
+                                pod.workspace_folder.clone().and_then(|workspace_folder| {
+                                    pod.container_name.clone().and_then(|container_name| {
                                         let mut labels = HashMap::new();
                                         for (key, value) in pod.labels.iter() {
                                             labels.insert(key.clone(), value.clone());
                                         }
-                                        return open_remote_container(
+                                        open_remote_container(
                                             handle.clone(),
                                             &cluster.context,
                                             &cluster.namespace,
@@ -151,9 +151,9 @@ pub fn run() {
                                             labels,
                                             &workspace_folder,
                                         )
-                                        .ok();
-                                    });
-                                });
+                                        .ok()
+                                    })
+                                })
                             });
                         println!("other menu event");
                     }
@@ -170,11 +170,8 @@ pub fn run() {
                     .filter(|pod| pod.workspace_folder.is_some())
                     .collect();
                 handle.manage(status.clone());
-                match handle.tray_by_id("hugill-tray") {
-                    Some(tray) => {
-                        let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
-                    }
-                    None => (),
+                if let Some(tray) = handle.tray_by_id("hugill-tray") {
+                    let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
                 }
                 handle
                     .emit_to("hugill", "cluster-status", status.clone())
@@ -186,9 +183,9 @@ pub fn run() {
                 // failed to create kube client
                 // TODO: restart watcher
                 println!("watcher error event received: {:?}", event.payload());
-                handle.tray_by_id("hugill-tray").map(|tray| {
+                if let Some(tray) = handle.tray_by_id("hugill-tray") {
                     let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
-                });
+                }
             });
             watcher::start(app.handle().clone())?;
             Ok(())
@@ -223,5 +220,5 @@ fn get_tray_menu(handle: &AppHandle, pods: Option<Vec<PodStatus>>) -> Result<Men
         true,
         None::<&str>,
     )?);
-    return builder.build();
+    builder.build()
 }
