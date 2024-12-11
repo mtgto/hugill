@@ -154,10 +154,14 @@ pub fn run() {
                     .expect("failed to emit updated status");
                 println!("watcher event received: {:?}", status);
             });
+            let handle = app.handle().clone();
             let _ = app.listen("watcher-error", move |event| {
                 // failed to create kube client
                 // TODO: restart watcher
                 println!("watcher error event received: {:?}", event.payload());
+                handle.tray_by_id("hugill-tray").map(|tray| {
+                    let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
+                });
             });
             watcher::start(app.handle().clone())?;
             Ok(())
