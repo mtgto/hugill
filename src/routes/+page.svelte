@@ -7,7 +7,7 @@ import { fade } from "svelte/transition";
 type PodStatus = {
     name: string;
     containerName?: string;
-    status: string;
+    status: "Running" | "Waiting" | "Terminated" | string;
     labels: Record<string, string>;
     workspaceFolder?: string;
 };
@@ -100,11 +100,10 @@ listen<ClusterStatus>("cluster-status", (event) => {
             <p class="subtitle is-6">{namespace}</p>
         </div>
     </header>
-    <button class="button" onclick={() => { dangerNotification = "Error!"; }}>Show Notification</button>
     <table class="table is-fullwidth">
         <thead>
             <tr>
-                <th>Status</th>
+                <th><abbr title="Status">Stat</abbr></th>
                 <th>Container</th>
                 <th>Name</th>
                 <th>Workspace Folder</th>
@@ -114,7 +113,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
         <tbody>
             {#each pods as pod}
                 <tr>
-                    <td><span class={"circle " + classForStatus(pod.status)}></span></td>
+                    <td><span class={"circle " + classForStatus(pod.status)} title={pod.status}></span></td>
                     <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td>{pod.workspaceFolder ?? "-"}</td>
