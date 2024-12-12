@@ -12,6 +12,14 @@ const handleKeydown = (event: KeyboardEvent) => {
         onClose();
     }
 };
+
+let textField: HTMLInputElement | null = null;
+
+$effect(() => {
+    if (isActive) {
+        textField?.focus();
+    }
+});
 </script>
 
 <div class="modal" class:is-active={isActive}>
@@ -22,7 +30,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         </header>
         <section class="modal-card-body">
             <form onsubmit={(e) => { e.preventDefault(); onOpen() }}>
-                <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} />
+                <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} bind:this={textField} />
             </form>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-flex-end py-4">
