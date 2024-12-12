@@ -1,7 +1,21 @@
-# Tauri + Vanilla TS
+# Hugill
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+VSCode Remote Container Launcher app.
+Hugill is using Tauri v2.
 
-## Recommended IDE Setup
+## Production Build
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+You must register Apple Developer Program and [generate app-specific password](https://support.apple.com/en-us/102654) before build for production.
+See for details: https://tauri.app/distribute/sign/macos/#notarization
+
+```console
+xcrun notarytool store-credentials --apple-id "<Your Apple ID>" --team-id "<Your Team ID>"
+```
+
+```console
+APPLE_ID=<Your Apple ID> APPLE_TEAM_ID=<Your Team ID> APPLE_PASSWORD=<Your App-Specific Password> pnpm tauri build --bundles dmg
+```
+
+## License
+
+MIT
