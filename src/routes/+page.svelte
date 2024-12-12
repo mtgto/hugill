@@ -27,10 +27,7 @@ let successNotification = $state<string | null>(null);
 let dangerNotification = $state<string | null>(null);
 let uniqueWorkspaceFolders = $derived.by(() => {
     return pods.reduce((workspaceFolders: string[], pod) => {
-        if (
-            pod.workspaceFolder &&
-            !workspaceFolders.includes(pod.workspaceFolder)
-        ) {
+        if (pod.workspaceFolder && !workspaceFolders.includes(pod.workspaceFolder)) {
             workspaceFolders.push(pod.workspaceFolder);
         }
         return workspaceFolders;
@@ -39,9 +36,7 @@ let uniqueWorkspaceFolders = $derived.by(() => {
 
 const isSamePod = (pod1: PodStatus | null, pod2: PodStatus): boolean => {
     if (pod1) {
-        return (
-            pod1.name === pod2.name && pod1.containerName === pod2.containerName
-        );
+        return pod1.name === pod2.name && pod1.containerName === pod2.containerName;
     } else {
         return false;
     }
@@ -99,6 +94,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
     pods = clusterStatus.pods;
 });
 </script>
+
 <main class="container is-fluid">
     <h2 class="title px-3 pt-4">Pods</h2>
     <header class="columns pt-2 pb-0 px-3">
@@ -124,20 +120,28 @@ listen<ClusterStatus>("cluster-status", (event) => {
         <tbody>
             {#each pods as pod}
                 <tr>
-                    <td><span class={"circle " + classForStatus(pod.status)} title={pod.status}></span></td>
+                    <td
+                        ><span
+                            class={"circle " + classForStatus(pod.status)}
+                            title={pod.status}
+                        ></span></td
+                    >
                     <td>{pod.containerName ?? "-"}</td>
                     <td>{pod.name}</td>
                     <td>{pod.workspaceFolder ?? "-"}</td>
-                    <td><button class="button is-small is-info" disabled={pod.status !== "Running"} onclick={() => { remotePath = pod.workspaceFolder ?? "/"; selectedPod = pod; }}>Open</button></td>
+                    <td>
+                        <button class="button is-small is-info" disabled={pod.status !== "Running"} onclick={() => {
+                            remotePath = pod.workspaceFolder ?? "/";
+                            selectedPod = pod;
+                        }}>Open</button>
+                    </td>
                 </tr>
             {/each}
         </tbody>
     </table>
-    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} bind:remotePath={remotePath} workspaceFolders={uniqueWorkspaceFolders} />
+    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} bind:remotePath workspaceFolders={uniqueWorkspaceFolders}/>
     {#if successNotification}
-        <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>
-            {successNotification}
-        </div>
+        <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>{successNotification}</div>
     {/if}
     {#if dangerNotification}
         <div class="notification is-danger py-3 pl-3 pr-6 m-4">
