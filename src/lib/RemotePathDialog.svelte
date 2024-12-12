@@ -2,10 +2,17 @@
 type Props = {
     remotePath: string;
     isActive: boolean;
+    workspaceFolders: string[];
     onClose: () => void;
     onOpen: () => void;
 };
-let { isActive, onClose, onOpen, remotePath = $bindable() }: Props = $props();
+let {
+    isActive,
+    workspaceFolders,
+    onClose,
+    onOpen,
+    remotePath = $bindable(),
+}: Props = $props();
 
 const handleKeydown = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -30,7 +37,12 @@ $effect(() => {
         </header>
         <section class="modal-card-body">
             <form onsubmit={(e) => { e.preventDefault(); onOpen() }}>
-                <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} bind:this={textField} />
+                <input class="input" type="text" placeholder="Path of the Workspace Folder" bind:value={remotePath} bind:this={textField} list="workspace-folders" />
+                <datalist id="workspace-folders">
+                    {#each workspaceFolders as workspaceFolder}
+                        <option value={workspaceFolder}></option>
+                    {/each}
+                </datalist>
             </form>
         </section>
         <footer class="modal-card-foot is-flex is-justify-content-flex-end py-4">

@@ -25,6 +25,17 @@ let selectedPod = $state<PodStatus | null>(null);
 let remotePath = $state("");
 let successNotification = $state<string | null>(null);
 let dangerNotification = $state<string | null>(null);
+let uniqueWorkspaceFolders = $derived.by(() => {
+    return pods.reduce((workspaceFolders: string[], pod) => {
+        if (
+            pod.workspaceFolder &&
+            !workspaceFolders.includes(pod.workspaceFolder)
+        ) {
+            workspaceFolders.push(pod.workspaceFolder);
+        }
+        return workspaceFolders;
+    }, []);
+});
 
 const isSamePod = (pod1: PodStatus | null, pod2: PodStatus): boolean => {
     if (pod1) {
@@ -122,7 +133,7 @@ listen<ClusterStatus>("cluster-status", (event) => {
             {/each}
         </tbody>
     </table>
-    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} bind:remotePath={remotePath} />
+    <RemotePathDialog isActive={selectedPod !== null} onClose={() => { selectedPod = null; }} onOpen={handleClickOpen} bind:remotePath={remotePath} workspaceFolders={uniqueWorkspaceFolders} />
     {#if successNotification}
         <div class="notification is-success p-3 m-4" out:fade={{ duration: 2000 }}>
             {successNotification}
