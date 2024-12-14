@@ -8,7 +8,7 @@ use settings::SettingsStore;
 use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Error, Listener, Manager, Wry,
 };
 use tauri_plugin_shell::ShellExt;
@@ -29,6 +29,10 @@ struct WorkspaceSetting {
 
 pub struct AppSettings {
     workspaces: Vec<WorkspaceSetting>,
+}
+
+struct TrayStatus {
+    opened: bool,
 }
 
 #[tauri::command]
@@ -119,6 +123,7 @@ pub fn run() {
                 .build()?
                 .into();
             app.manage(Mutex::new(store));
+            app.manage(Mutex::new(TrayStatus { opened: false }));
             let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
@@ -158,6 +163,41 @@ pub fn run() {
                         println!("other menu event");
                     }
                 })
+                .on_tray_icon_event(|tray, event| match event {
+                    TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Down,
+                        ..
+                    } => {
+                        // Tray is opened
+                        tray.app_handle()
+                            .state::<Mutex<TrayStatus>>()
+                            .lock()
+                            .unwrap()
+                            .opened = true;
+                    }
+                    TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } => {
+                        // Tray is closed
+                        tray.app_handle()
+                            .state::<Mutex<TrayStatus>>()
+                            .lock()
+                            .unwrap()
+                            .opened = false;
+                    }
+                    TrayIconEvent::Leave { .. } => {
+                        // Tray is closed
+                        tray.app_handle()
+                            .state::<Mutex<TrayStatus>>()
+                            .lock()
+                            .unwrap()
+                            .opened = false;
+                    }
+                    _ => (),
+                })
                 .build(app);
             let handle = app.handle().clone();
             let _ = app.listen("watcher", move |event| {
@@ -171,7 +211,9 @@ pub fn run() {
                     .collect();
                 handle.manage(status.clone());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
-                    let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
+                    if !handle.state::<Mutex<TrayStatus>>().lock().unwrap().opened {
+                        let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
+                    }
                 }
                 handle
                     .emit_to("hugill", "cluster-status", status.clone())
@@ -187,7 +229,9 @@ pub fn run() {
                     .expect("failed to emit watcher error event");
                 println!("watcher error event received: {}", event.payload());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
-                    let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
+                    if !handle.state::<Mutex<TrayStatus>>().lock().unwrap().opened {
+                        let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
+                    }
                 }
             });
             // TODO: notify/restart watcher when watcher returns error
@@ -200,7 +244,7 @@ pub fn run() {
 
 fn get_tray_menu(handle: &AppHandle, pods: Option<Vec<PodStatus>>) -> Result<Menu<Wry>, Error> {
     let builder = MenuBuilder::new(handle);
-    let builder = match pods {
+    match pods {
         Some(pods) => {
             let mut builder = builder;
             for pod in pods {
@@ -216,13 +260,13 @@ fn get_tray_menu(handle: &AppHandle, pods: Option<Vec<PodStatus>>) -> Result<Men
             builder.separator()
         }
         None => builder,
-    };
-    let builder = builder.item(&MenuItem::with_id(
+    }
+    .item(&MenuItem::with_id(
         handle,
         "quit",
         "Quit",
         true,
         None::<&str>,
-    )?);
-    builder.build()
+    )?)
+    .build()
 }
