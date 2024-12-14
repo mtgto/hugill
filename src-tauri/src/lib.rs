@@ -180,13 +180,17 @@ pub fn run() {
             });
             let handle = app.handle().clone();
             let _ = app.listen("watcher-error", move |event| {
-                // failed to create kube client
-                // TODO: restart watcher
-                println!("watcher error event received: {:?}", event.payload());
+                // failed to receive cluster status
+                let message: String = serde_json::from_str(event.payload()).unwrap();
+                handle
+                    .emit_to("hugill", "cluster-status-error", message)
+                    .expect("failed to emit watcher error event");
+                println!("watcher error event received: {}", event.payload());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
                     let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
                 }
             });
+            // TODO: notify/restart watcher when watcher returns error
             watcher::start(app.handle().clone())?;
             Ok(())
         })

@@ -98,7 +98,9 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                         .expect("failed to emit watcher event");
                 }
                 Err(e) => {
-                    println!("failed to list pods: {}", e);
+                    handle
+                        .emit_to(EventTarget::app(), "watcher-error", e.to_string())
+                        .expect("failed to emit watcher error event");
                 }
             }
             tokio::time::sleep(time::Duration::from_secs(5)).await;

@@ -93,6 +93,11 @@ listen<ClusterStatus>("cluster-status", (event) => {
     namespace = clusterStatus.namespace;
     pods = clusterStatus.pods;
 });
+
+listen<string>("cluster-status-error", (event) => {
+    console.error("Failed to get cluster status:", event.payload);
+    dangerNotification = `Failed to get cluster status: ${event.payload}`;
+});
 </script>
 
 <main class="container is-fluid">
