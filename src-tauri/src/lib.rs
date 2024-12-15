@@ -57,55 +57,63 @@ fn open_remote_container(
             .args(["--folder-uri", &remote_uri])
             .output()
             .await
-            .unwrap()
     });
-    if output.status.success() {
-        let settings_store = app_handle.state::<Mutex<SettingsStore>>();
-        let settings_store = settings_store.lock().unwrap();
-        let mut workspaces = settings_store.app_settings().workspaces;
-        let index = workspaces.iter().position(|ws| {
-            if ws.context == context
-                && ws.namespace == namespace
-                && ws.container_name == container_name
-            {
-                let satisfied = ws
-                    .labels
-                    .iter()
-                    .all(|(k, v)| labels.get(k).map(|val| val == v).unwrap_or(false));
-                if satisfied {
-                    return true;
-                }
-            }
-            false
-        });
-        match index {
-            Some(i) => {
-                let ws = &mut workspaces[i];
-                ws.workspace_folder = workspace_folder.to_string();
-            }
-            None => {
-                let mut filtered_labels: HashMap<String, String> = HashMap::new();
-                for (key, value) in labels.iter() {
-                    // ignore hash-related labels (e.g. "pod-template-hash")
-                    if !key.ends_with("-hash") {
-                        filtered_labels.insert(key.to_string(), value.to_string());
+    match output {
+        Err(e) => {
+            // ex: code command not found
+            println!("Failed to open remote container: {e}");
+            Err(format!("Failed to open remote container: {e}"))
+        }
+        Ok(output) => {
+            if output.status.success() {
+                let settings_store = app_handle.state::<Mutex<SettingsStore>>();
+                let settings_store = settings_store.lock().unwrap();
+                let mut workspaces = settings_store.app_settings().workspaces;
+                let index = workspaces.iter().position(|ws| {
+                    if ws.context == context
+                        && ws.namespace == namespace
+                        && ws.container_name == container_name
+                    {
+                        let satisfied = ws
+                            .labels
+                            .iter()
+                            .all(|(k, v)| labels.get(k).map(|val| val == v).unwrap_or(false));
+                        if satisfied {
+                            return true;
+                        }
+                    }
+                    false
+                });
+                match index {
+                    Some(i) => {
+                        let ws = &mut workspaces[i];
+                        ws.workspace_folder = workspace_folder.to_string();
+                    }
+                    None => {
+                        let mut filtered_labels: HashMap<String, String> = HashMap::new();
+                        for (key, value) in labels.iter() {
+                            // ignore hash-related labels (e.g. "pod-template-hash")
+                            if !key.ends_with("-hash") {
+                                filtered_labels.insert(key.to_string(), value.to_string());
+                            }
+                        }
+                        workspaces.push(WorkspaceSetting {
+                            context: context.to_string(),
+                            namespace: namespace.to_string(),
+                            container_name: container_name.to_string(),
+                            workspace_folder: workspace_folder.to_string(),
+                            labels: filtered_labels,
+                        });
+                        println!("Added workspace folder for {container_name}");
                     }
                 }
-                workspaces.push(WorkspaceSetting {
-                    context: context.to_string(),
-                    namespace: namespace.to_string(),
-                    container_name: container_name.to_string(),
-                    workspace_folder: workspace_folder.to_string(),
-                    labels: filtered_labels,
-                });
-                println!("Added workspace folder for {container_name}");
+                settings_store.update_workspaces(workspaces);
+                Ok(())
+            } else {
+                println!("Exit with code: {}", output.status.code().unwrap());
+                Err("Failed to open remote container".to_string())
             }
         }
-        settings_store.update_workspaces(workspaces);
-        Ok(())
-    } else {
-        println!("Exit with code: {}", output.status.code().unwrap());
-        Err("Failed to open remote container".to_string())
     }
 }
 

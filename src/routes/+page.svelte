@@ -79,8 +79,14 @@ const handleClickOpen = async () => {
                 successNotification = null;
             }, 2000);
         } catch (error) {
+            console.error(error);
             successNotification = null;
-            dangerNotification = "Failed to open remote container.";
+            if (typeof error === "string") {
+                dangerNotification = error;
+            } else {
+                // TODO: remove this condition
+                dangerNotification = "Failed to open remote container.";
+            }
         }
         selectedPod = null;
     }
