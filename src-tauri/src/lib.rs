@@ -11,6 +11,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Error, Listener, Manager, Wry,
 };
+use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
 use watcher::{ClusterStatus, PodStatus};
@@ -120,6 +121,7 @@ fn open_remote_container(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![open_remote_container])
@@ -242,9 +244,19 @@ pub fn run() {
                     }
                 }
             });
-            // TODO: notify/restart watcher when watcher returns error
-            watcher::start(app.handle().clone())?;
-            Ok(())
+            // TODO: restart watcher when watcher returns error
+            watcher::start(app.handle().clone()).or_else(|e| {
+                println!("Failed to start watcher: {e}");
+                let _ = app
+                    .dialog()
+                    .message(format!("Failed to setup containers watcher: {e}"))
+                    .kind(MessageDialogKind::Error)
+                    .title("Failed to setup containers watcher")
+                    .show(|_result| {
+                        std::process::exit(0);
+                    });
+                Ok(())
+            })
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
