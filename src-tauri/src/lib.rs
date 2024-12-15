@@ -28,6 +28,7 @@ struct WorkspaceSetting {
 }
 
 pub struct AppSettings {
+    poll_interval_msec: u64,
     workspaces: Vec<WorkspaceSetting>,
 }
 
@@ -44,7 +45,13 @@ fn watch_cluster(app_handle: tauri::AppHandle) -> Result<(), String> {
         .unwrap()
         .watcher_started
     {
-        watcher::start(app_handle.clone()).map_or_else(
+        let poll_interval_msec = app_handle
+            .state::<Mutex<SettingsStore>>()
+            .lock()
+            .unwrap()
+            .app_settings()
+            .poll_interval_msec;
+        watcher::start(app_handle.clone(), poll_interval_msec).map_or_else(
             |e| {
                 println!("Failed to start watcher: {e}");
                 Err(format!("Failed to setup containers watcher: {e}"))
@@ -55,6 +62,7 @@ fn watch_cluster(app_handle: tauri::AppHandle) -> Result<(), String> {
                     .lock()
                     .unwrap()
                     .watcher_started = true;
+                println!("Watcher started");
                 Ok(())
             },
         )
@@ -76,9 +84,7 @@ fn open_remote_container(
 ) -> Result<(), String> {
     let s = format!("k8s-container+context={context}+podname={pod_name}+namespace={namespace}+name={container_name}");
     let encoded = utf8_percent_encode(&s, NON_ALPHANUMERIC).to_string();
-    println!("encoded: {encoded}");
     let remote_uri = format!("vscode-remote://{encoded}{workspace_folder}");
-    println!("remote_uri: {remote_uri}");
     let shell = app_handle.shell();
     let output = tauri::async_runtime::block_on(async move {
         shell

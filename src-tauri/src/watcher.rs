@@ -33,7 +33,7 @@ pub struct ClusterStatus {
     pub pods: Vec<PodStatus>,
 }
 
-pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+pub fn start(handle: AppHandle, poll_interval_msec: u64) -> Result<(), Box<dyn std::error::Error>> {
     let kubeconfig = Kubeconfig::read()?;
     let current_context = kubeconfig
         .current_context
@@ -103,7 +103,7 @@ pub fn start(handle: AppHandle) -> Result<(), Box<dyn std::error::Error>> {
                         .expect("failed to emit watcher error event");
                 }
             }
-            tokio::time::sleep(time::Duration::from_secs(5)).await;
+            tokio::time::sleep(time::Duration::from_millis(poll_interval_msec)).await;
         }
     });
     Ok(())

@@ -23,6 +23,7 @@ impl SettingsStore {
             serde_json::from_value::<Vec<WorkspaceSetting>>(workspace_settings).ok()
         });
         AppSettings {
+            poll_interval_msec: 5000,
             workspaces: workspaces.unwrap_or_default(),
         }
     }
