@@ -2,6 +2,7 @@
 import RemotePathDialog from "$lib/RemotePathDialog.svelte";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { onMount } from "svelte";
 import { fade } from "svelte/transition";
 
 type PodStatus = {
@@ -91,6 +92,21 @@ const handleClickOpen = async () => {
         selectedPod = null;
     }
 };
+
+onMount(async () => {
+    try {
+        await invoke("watch_cluster");
+        console.log("Start watching cluster.");
+    } catch (error) {
+        console.error("Failed to watch cluster:", error);
+        if (typeof error === "string") {
+            dangerNotification = error;
+        } else {
+            // TODO: remove this condition
+            dangerNotification = "Failed to watch cluster.";
+        }
+    }
+});
 
 listen<ClusterStatus>("cluster-status", (event) => {
     const clusterStatus = event.payload;

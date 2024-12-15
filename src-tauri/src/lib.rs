@@ -11,7 +11,6 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Error, Listener, Manager, Wry,
 };
-use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
 use watcher::{ClusterStatus, PodStatus};
@@ -32,8 +31,37 @@ pub struct AppSettings {
     workspaces: Vec<WorkspaceSetting>,
 }
 
-struct TrayStatus {
-    opened: bool,
+struct AppStatus {
+    watcher_started: bool,
+    tray_opened: bool,
+}
+
+#[tauri::command]
+fn watch_cluster(app_handle: tauri::AppHandle) -> Result<(), String> {
+    if !app_handle
+        .state::<Mutex<AppStatus>>()
+        .lock()
+        .unwrap()
+        .watcher_started
+    {
+        watcher::start(app_handle.clone()).map_or_else(
+            |e| {
+                println!("Failed to start watcher: {e}");
+                Err(format!("Failed to setup containers watcher: {e}"))
+            },
+            |_| {
+                app_handle
+                    .state::<Mutex<AppStatus>>()
+                    .lock()
+                    .unwrap()
+                    .watcher_started = true;
+                Ok(())
+            },
+        )
+    } else {
+        println!("Failed to start watcher: Watcher already started");
+        Err("Failed to start watcher: Watcher already started".to_string())
+    }
 }
 
 #[tauri::command]
@@ -121,10 +149,12 @@ fn open_remote_container(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![open_remote_container])
+        .invoke_handler(tauri::generate_handler![
+            watch_cluster,
+            open_remote_container
+        ])
         .setup(|app| {
             let default_workspace_settings: [WorkspaceSetting; 0] = [];
             let store: SettingsStore = app
@@ -133,7 +163,10 @@ pub fn run() {
                 .build()?
                 .into();
             app.manage(Mutex::new(store));
-            app.manage(Mutex::new(TrayStatus { opened: false }));
+            app.manage(Mutex::new(AppStatus {
+                watcher_started: false,
+                tray_opened: false,
+            }));
             let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
@@ -181,10 +214,10 @@ pub fn run() {
                     } => {
                         // Tray is opened
                         tray.app_handle()
-                            .state::<Mutex<TrayStatus>>()
+                            .state::<Mutex<AppStatus>>()
                             .lock()
                             .unwrap()
-                            .opened = true;
+                            .tray_opened = true;
                     }
                     TrayIconEvent::Click {
                         button: MouseButton::Left,
@@ -193,18 +226,18 @@ pub fn run() {
                     } => {
                         // Tray is closed
                         tray.app_handle()
-                            .state::<Mutex<TrayStatus>>()
+                            .state::<Mutex<AppStatus>>()
                             .lock()
                             .unwrap()
-                            .opened = false;
+                            .tray_opened = false;
                     }
                     TrayIconEvent::Leave { .. } => {
                         // Tray is closed
                         tray.app_handle()
-                            .state::<Mutex<TrayStatus>>()
+                            .state::<Mutex<AppStatus>>()
                             .lock()
                             .unwrap()
-                            .opened = false;
+                            .tray_opened = false;
                     }
                     _ => (),
                 })
@@ -221,7 +254,12 @@ pub fn run() {
                     .collect();
                 handle.manage(status.clone());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
-                    if !handle.state::<Mutex<TrayStatus>>().lock().unwrap().opened {
+                    if !handle
+                        .state::<Mutex<AppStatus>>()
+                        .lock()
+                        .unwrap()
+                        .tray_opened
+                    {
                         let _ = tray.set_menu(get_tray_menu(&handle, Some(pods)).ok());
                     }
                 }
@@ -239,24 +277,17 @@ pub fn run() {
                     .expect("failed to emit watcher error event");
                 println!("watcher error event received: {}", event.payload());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
-                    if !handle.state::<Mutex<TrayStatus>>().lock().unwrap().opened {
+                    if !handle
+                        .state::<Mutex<AppStatus>>()
+                        .lock()
+                        .unwrap()
+                        .tray_opened
+                    {
                         let _ = tray.set_menu(get_tray_menu(&handle, None).ok());
                     }
                 }
             });
-            // TODO: restart watcher when watcher returns error
-            watcher::start(app.handle().clone()).or_else(|e| {
-                println!("Failed to start watcher: {e}");
-                let _ = app
-                    .dialog()
-                    .message(format!("Failed to setup containers watcher: {e}"))
-                    .kind(MessageDialogKind::Error)
-                    .title("Failed to setup containers watcher")
-                    .show(|_result| {
-                        std::process::exit(0);
-                    });
-                Ok(())
-            })
+            Ok(())
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
