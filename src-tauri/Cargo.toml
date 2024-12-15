@@ -1,6 +1,6 @@
 [package]
 name = "hugill"
-version = "0.1.0"
+version = "0.2.0"
 description = "System Tray launcher to open remote container in VSCode easily"
 authors = ["mtgto <hogerappa@gmail.com>"]
 edition = "2021"
