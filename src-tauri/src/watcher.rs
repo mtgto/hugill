@@ -8,6 +8,7 @@ use kube::{
     Client,
 };
 use serde::{Deserialize, Serialize};
+use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, EventTarget, Manager};
 use tokio::time;
 
@@ -33,7 +34,10 @@ pub struct ClusterStatus {
     pub pods: Vec<PodStatus>,
 }
 
-pub fn start(handle: AppHandle, poll_interval_msec: u64) -> Result<(), Box<dyn std::error::Error>> {
+pub fn start(
+    handle: AppHandle,
+    poll_interval_msec: u64,
+) -> Result<JoinHandle<()>, Box<dyn std::error::Error>> {
     let kubeconfig = Kubeconfig::read()?;
     let current_context = kubeconfig
         .current_context
@@ -46,7 +50,7 @@ pub fn start(handle: AppHandle, poll_interval_msec: u64) -> Result<(), Box<dyn s
         Client::try_from(config).map_err(|_| "failed to load config for k8s")
     })?;
     println!("default context: {}", current_context);
-    tauri::async_runtime::spawn(async move {
+    let handle: JoinHandle<()> = tauri::async_runtime::spawn(async move {
         let namespace = client.default_namespace().to_string();
         let api: Api<Pod> = Api::default_namespaced(client);
         loop {
@@ -106,7 +110,7 @@ pub fn start(handle: AppHandle, poll_interval_msec: u64) -> Result<(), Box<dyn s
             tokio::time::sleep(time::Duration::from_millis(poll_interval_msec)).await;
         }
     });
-    Ok(())
+    Ok(handle)
 }
 
 fn resolve_workspace_folder(

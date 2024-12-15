@@ -95,7 +95,7 @@ const handleClickOpen = async () => {
 
 onMount(async () => {
     try {
-        await invoke("watch_cluster");
+        await invoke("start_cluster_watcher");
         console.log("Start watching cluster.");
     } catch (error) {
         console.error("Failed to watch cluster:", error);

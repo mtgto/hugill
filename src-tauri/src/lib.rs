@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::SettingsStore;
 use tauri::{
+    async_runtime::JoinHandle,
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -33,42 +34,43 @@ pub struct AppSettings {
 }
 
 struct AppStatus {
-    watcher_started: bool,
+    watcher_join_handle: Option<JoinHandle<()>>,
     tray_opened: bool,
 }
 
 #[tauri::command]
-fn watch_cluster(app_handle: tauri::AppHandle) -> Result<(), String> {
-    if !app_handle
-        .state::<Mutex<AppStatus>>()
+fn start_cluster_watcher(app_handle: tauri::AppHandle) -> Result<(), String> {
+    stop_cluster_watcher(app_handle.clone());
+    let poll_interval_msec = app_handle
+        .state::<Mutex<SettingsStore>>()
         .lock()
         .unwrap()
-        .watcher_started
-    {
-        let poll_interval_msec = app_handle
-            .state::<Mutex<SettingsStore>>()
-            .lock()
-            .unwrap()
-            .app_settings()
-            .poll_interval_msec;
-        watcher::start(app_handle.clone(), poll_interval_msec).map_or_else(
-            |e| {
-                println!("Failed to start watcher: {e}");
-                Err(format!("Failed to setup containers watcher: {e}"))
-            },
-            |_| {
-                app_handle
-                    .state::<Mutex<AppStatus>>()
-                    .lock()
-                    .unwrap()
-                    .watcher_started = true;
-                println!("Watcher started");
-                Ok(())
-            },
-        )
-    } else {
-        println!("Failed to start watcher: Watcher already started");
-        Err("Failed to start watcher: Watcher already started".to_string())
+        .app_settings()
+        .poll_interval_msec;
+    watcher::start(app_handle.clone(), poll_interval_msec).map_or_else(
+        |e| {
+            println!("Failed to start watcher: {e}");
+            Err(format!("Failed to setup containers watcher: {e}"))
+        },
+        |join_handle| {
+            app_handle
+                .state::<Mutex<AppStatus>>()
+                .lock()
+                .unwrap()
+                .watcher_join_handle = Some(join_handle);
+            println!("Watcher started");
+            Ok(())
+        },
+    )
+}
+
+#[tauri::command]
+fn stop_cluster_watcher(app_handle: tauri::AppHandle) {
+    let state = app_handle.state::<Mutex<AppStatus>>();
+    let mut state = state.lock().unwrap();
+    if let Some(watcher_join_handle) = &state.watcher_join_handle {
+        watcher_join_handle.abort();
+        state.watcher_join_handle = None;
     }
 }
 
@@ -158,7 +160,8 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_store::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
-            watch_cluster,
+            start_cluster_watcher,
+            stop_cluster_watcher,
             open_remote_container
         ])
         .setup(|app| {
@@ -170,7 +173,7 @@ pub fn run() {
                 .into();
             app.manage(Mutex::new(store));
             app.manage(Mutex::new(AppStatus {
-                watcher_started: false,
+                watcher_join_handle: None,
                 tray_opened: false,
             }));
             let handle = app.handle().clone();
