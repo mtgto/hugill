@@ -2,6 +2,8 @@
 
 Hugill is VSCode Remote Container Launcher app for Kubernetes containers. Built with Tauri v2.
 
+![demo](https://github.com/user-attachments/assets/8a338f0f-12d0-419d-a356-665be429f1af)
+
 ## How it works
 
 VSCode supports to open k8s remote container like: `code --folder-uri vscode-remote://k8s-container+context=<context>+podname=<pod_name>+namespace=<namespace>+name=<container_name><remote_full_path>`
