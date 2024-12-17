@@ -21,7 +21,7 @@ pub struct PodStatus {
     /// Pod name
     pub name: String,
     pub container_name: Option<String>,
-    status: String,
+    pub status: String,
     pub labels: BTreeMap<String, String>,
     pub workspace_folder: Option<String>,
 }

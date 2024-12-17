@@ -308,12 +308,18 @@ fn get_tray_menu(handle: &AppHandle, pods: Option<Vec<PodStatus>>) -> Result<Men
         Some(pods) => {
             let mut builder = builder;
             for pod in pods {
+                let native_icon = match pod.status.as_str() {
+                    "Running" => NativeIcon::StatusAvailable,
+                    "Waiting" => NativeIcon::StatusPartiallyAvailable,
+                    "Terminated" => NativeIcon::StatusUnavailable,
+                    _ => NativeIcon::StatusNone,
+                };
                 builder = builder.item(&IconMenuItem::with_id_and_native_icon(
                     handle,
                     &pod.name,
                     &pod.name,
                     true,
-                    Some(NativeIcon::StatusAvailable),
+                    Some(native_icon),
                     None::<&str>,
                 )?);
             }
