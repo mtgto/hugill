@@ -9,7 +9,7 @@ use tauri::{
     async_runtime::JoinHandle,
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
-    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
     AppHandle, Emitter, Error, Listener, Manager, Wry,
 };
 use tauri_plugin_shell::ShellExt;
@@ -217,7 +217,6 @@ pub fn run() {
                 })
                 .on_tray_icon_event(|tray, event| match event {
                     TrayIconEvent::Click {
-                        button: MouseButton::Left,
                         button_state: MouseButtonState::Down,
                         ..
                     } => {
@@ -229,7 +228,6 @@ pub fn run() {
                             .tray_opened = true;
                     }
                     TrayIconEvent::Click {
-                        button: MouseButton::Left,
                         button_state: MouseButtonState::Up,
                         ..
                     } => {
