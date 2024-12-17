@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## Unreleased
+
+- Set icon for menuitem by status of the pod
+- Add key namespace to settings.json
+
 ## v0.2.0 (2024-12-16)
 
 - Show reason when opening remote container fails
