@@ -36,6 +36,7 @@ pub struct ClusterStatus {
 
 pub fn start(
     handle: AppHandle,
+    namespace: Option<String>,
     poll_interval_msec: u64,
 ) -> Result<JoinHandle<()>, Box<dyn std::error::Error>> {
     let kubeconfig = Kubeconfig::read()?;
@@ -51,8 +52,8 @@ pub fn start(
     })?;
     println!("default context: {}", current_context);
     let handle: JoinHandle<()> = tauri::async_runtime::spawn(async move {
-        let namespace = client.default_namespace().to_string();
-        let api: Api<Pod> = Api::default_namespaced(client);
+        let namespace = namespace.unwrap_or(client.default_namespace().to_string());
+        let api: Api<Pod> = Api::namespaced(client, &namespace);
         loop {
             match api.list(&ListParams::default()).await {
                 Ok(pod_list) => {

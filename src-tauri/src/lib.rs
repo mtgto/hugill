@@ -29,6 +29,7 @@ struct WorkspaceSetting {
 }
 
 pub struct AppSettings {
+    namespace: Option<String>,
     poll_interval_msec: u64,
     workspaces: Vec<WorkspaceSetting>,
 }
@@ -41,13 +42,14 @@ struct AppStatus {
 #[tauri::command]
 fn start_cluster_watcher(app_handle: tauri::AppHandle) -> Result<(), String> {
     stop_cluster_watcher(app_handle.clone());
-    let poll_interval_msec = app_handle
+    let app_settings = app_handle
         .state::<Mutex<SettingsStore>>()
         .lock()
         .unwrap()
-        .app_settings()
-        .poll_interval_msec;
-    watcher::start(app_handle.clone(), poll_interval_msec).map_or_else(
+        .app_settings();
+    let poll_interval_msec = app_settings.poll_interval_msec;
+    let namespace = app_settings.namespace;
+    watcher::start(app_handle.clone(), namespace, poll_interval_msec).map_or_else(
         |e| {
             println!("Failed to start watcher: {e}");
             Err(format!("Failed to setup containers watcher: {e}"))

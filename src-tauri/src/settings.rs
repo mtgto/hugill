@@ -18,12 +18,21 @@ impl From<Arc<Store<Wry>>> for SettingsStore {
 
 impl SettingsStore {
     pub fn app_settings(&self) -> AppSettings {
+        let namespace = self
+            .store
+            .get("namespace")
+            .and_then(|namespace| serde_json::from_value::<String>(namespace).ok());
+        let poll_interval_msec = self
+            .store
+            .get("poll_interval_msec")
+            .and_then(|poll_interval_msec| serde_json::from_value::<u64>(poll_interval_msec).ok());
         let workspaces = self.store.get("workspaces");
         let workspaces = workspaces.and_then(|workspace_settings| {
             serde_json::from_value::<Vec<WorkspaceSetting>>(workspace_settings).ok()
         });
         AppSettings {
-            poll_interval_msec: 5000,
+            namespace,
+            poll_interval_msec: poll_interval_msec.unwrap_or(5000),
             workspaces: workspaces.unwrap_or_default(),
         }
     }
