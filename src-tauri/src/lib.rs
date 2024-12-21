@@ -37,6 +37,7 @@ pub struct AppSettings {
 struct AppStatus {
     watcher_join_handle: Option<JoinHandle<()>>,
     tray_opened: bool,
+    cluster_status: Option<ClusterStatus>,
 }
 
 #[tauri::command]
@@ -177,6 +178,7 @@ pub fn run() {
             app.manage(Mutex::new(AppStatus {
                 watcher_join_handle: None,
                 tray_opened: false,
+                cluster_status: None,
             }));
             let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")
@@ -189,7 +191,13 @@ pub fn run() {
                         app.exit(0);
                     }
                     pod_id => {
-                        let cluster = handle.state::<ClusterStatus>();
+                        let app_state = app.state::<Mutex<AppStatus>>();
+                        let cluster = app_state
+                            .lock()
+                            .unwrap()
+                            .cluster_status
+                            .clone()
+                            .expect("cluster status not available");
                         cluster
                             .pods
                             .iter()
@@ -261,7 +269,11 @@ pub fn run() {
                     .into_iter()
                     .filter(|pod| pod.workspace_folder.is_some())
                     .collect();
-                handle.manage(status.clone());
+                handle
+                    .state::<Mutex<AppStatus>>()
+                    .lock()
+                    .unwrap()
+                    .cluster_status = Some(status.clone());
                 if let Some(tray) = handle.tray_by_id("hugill-tray") {
                     if !handle
                         .state::<Mutex<AppStatus>>()
