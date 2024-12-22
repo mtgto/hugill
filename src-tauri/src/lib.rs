@@ -32,6 +32,7 @@ pub struct AppSettings {
     namespace: Option<String>,
     poll_interval_msec: u64,
     workspaces: Vec<WorkspaceSetting>,
+    code_command: String,
 }
 
 struct AppStatus {
@@ -90,10 +91,16 @@ fn open_remote_container(
     let s = format!("k8s-container+context={context}+podname={pod_name}+namespace={namespace}+name={container_name}");
     let encoded = utf8_percent_encode(&s, NON_ALPHANUMERIC).to_string();
     let remote_uri = format!("vscode-remote://{encoded}{workspace_folder}");
+    let code_command = app_handle
+        .state::<Mutex<SettingsStore>>()
+        .lock()
+        .unwrap()
+        .app_settings()
+        .code_command;
     let shell = app_handle.shell();
     let output = tauri::async_runtime::block_on(async move {
         shell
-            .command("code")
+            .command(code_command)
             .args(["--folder-uri", &remote_uri])
             .output()
             .await
@@ -222,7 +229,6 @@ pub fn run() {
                                     })
                                 })
                             });
-                        println!("other menu event");
                     }
                 })
                 .on_tray_icon_event(|tray, event| match event {

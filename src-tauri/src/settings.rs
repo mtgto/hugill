@@ -30,10 +30,14 @@ impl SettingsStore {
         let workspaces = workspaces.and_then(|workspace_settings| {
             serde_json::from_value::<Vec<WorkspaceSetting>>(workspace_settings).ok()
         });
+        let code_command = self.store.get("code_command");
+        let code_command = code_command
+            .and_then(|code_command| serde_json::from_value::<String>(code_command).ok());
         AppSettings {
             namespace,
             poll_interval_msec: poll_interval_msec.unwrap_or(5000),
             workspaces: workspaces.unwrap_or_default(),
+            code_command: code_command.unwrap_or("code".to_string()),
         }
     }
 
