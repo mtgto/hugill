@@ -190,7 +190,8 @@ pub fn run() {
             }));
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("Hugill")
-                .inner_size(800.0, 600.0);
+                .inner_size(1024.0, 768.0)
+                .min_inner_size(800.0, 400.0);
             #[cfg(target_os = "macos")]
             let win_builder = win_builder
                 .title_bar_style(TitleBarStyle::Overlay)
