@@ -123,6 +123,7 @@ listen<string>("cluster-status-error", (event) => {
 </script>
 
 <main class="container is-fluid">
+    <div id="titlebar" data-tauri-drag-region></div>
     <h2 class="title px-3 pt-4">Pods</h2>
     <header class="columns pt-2 pb-0 px-3">
         <div class="column is-one-third">
@@ -179,6 +180,17 @@ listen<string>("cluster-status-error", (event) => {
 </main>
 
 <style>
+    #titlebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+		height: 30px;
+
+        + * {
+            margin-top: 30px; /* height of the titlebar */
+        }
+    }
     .circle {
         border-radius: 50%;
         width: 1rem;

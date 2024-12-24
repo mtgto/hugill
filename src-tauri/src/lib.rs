@@ -10,7 +10,8 @@ use tauri::{
     include_image,
     menu::{IconMenuItem, Menu, MenuBuilder, MenuItem, NativeIcon},
     tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Error, Listener, Manager, Wry,
+    AppHandle, Emitter, Error, Listener, Manager, TitleBarStyle, WebviewUrl, WebviewWindowBuilder,
+    Wry,
 };
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_store::StoreExt;
@@ -187,6 +188,14 @@ pub fn run() {
                 tray_opened: false,
                 cluster_status: None,
             }));
+            let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
+                .title("Hugill")
+                .inner_size(800.0, 600.0);
+            #[cfg(target_os = "macos")]
+            let win_builder = win_builder
+                .title_bar_style(TitleBarStyle::Overlay)
+                .hidden_title(true);
+            let _ = win_builder.build().unwrap();
             let handle = app.handle().clone();
             let _ = TrayIconBuilder::with_id("hugill-tray")
                 .tooltip("Hugill")
