@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.1 (2025-01-05)
+
 - Update default code_command
 
 ## v0.3.0 (2025-01-05)
