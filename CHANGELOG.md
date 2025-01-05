@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update default code_command
+
 ## v0.3.0 (2025-01-05)
 
 - Set icon for menuitem by status of the pod

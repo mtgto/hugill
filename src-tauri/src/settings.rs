@@ -37,7 +37,9 @@ impl SettingsStore {
             namespace,
             poll_interval_msec: poll_interval_msec.unwrap_or(5000),
             workspaces: workspaces.unwrap_or_default(),
-            code_command: code_command.unwrap_or("code".to_string()),
+            code_command: code_command.unwrap_or(
+                "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code".to_string(),
+            ),
         }
     }
 
