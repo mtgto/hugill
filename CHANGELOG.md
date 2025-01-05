@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.0 (2025-01-05)
+
 - Set icon for menuitem by status of the pod
 - Add namespace to settings.json
 - Bugfix: open from the system tray sometimes did not work
