@@ -10,21 +10,21 @@
         "tauri": "tauri"
     },
     "dependencies": {
-        "@tauri-apps/api": "^2.2.0",
-        "@tauri-apps/plugin-shell": "^2.2.0",
+        "@tauri-apps/api": "^2.4.1",
+        "@tauri-apps/plugin-shell": "^2.2.1",
         "@tauri-apps/plugin-store": "~2.2.0",
         "bulma": "^1.0.3"
     },
     "devDependencies": {
         "@biomejs/biome": "^1.9.4",
         "@sveltejs/adapter-static": "^3.0.8",
-        "@sveltejs/kit": "^2.15.1",
+        "@sveltejs/kit": "^2.20.4",
         "@sveltejs/vite-plugin-svelte": "^5.0.3",
-        "@tauri-apps/cli": "^2.2.2",
-        "lefthook": "^1.10.1",
-        "svelte": "^5.16.1",
-        "typescript": "^5.7.2",
-        "vite": "^6.0.7"
+        "@tauri-apps/cli": "^2.4.1",
+        "lefthook": "^1.11.6",
+        "svelte": "^5.25.6",
+        "typescript": "^5.8.3",
+        "vite": "^6.2.5"
     },
     "packageManager": "pnpm@9.14.4+sha512.c8180b3fbe4e4bca02c94234717896b5529740a6cbadf19fa78254270403ea2f27d4e1d46a08a0f56c89b63dc8ebfd3ee53326da720273794e6200fcf0d184ab"
 }
